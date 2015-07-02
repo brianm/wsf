@@ -1,0 +1,7 @@
+[package]
+name = "wsf"
+version = "0.1.0"
+authors = ["Brian McCallister <brianm@skife.org>"]
+
+[dependencies]
+hyper = "0.6.1"
