@@ -5,3 +5,4 @@ authors = ["Brian McCallister <brianm@skife.org>"]
 
 [dependencies]
 hyper = "0.6.1"
+rustc-serialize = "0.3.15"

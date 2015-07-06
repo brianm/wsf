@@ -3,6 +3,7 @@ name = "wsf"
 version = "0.1.0"
 dependencies = [
  "hyper 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
