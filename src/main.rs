@@ -1,52 +1,102 @@
 extern crate hyper;
 extern crate rustc_serialize;
+extern crate chrono;
+extern crate regex;
+
+use chrono::*;
 
 use rustc_serialize::json;
 use std::io::Read;
 use hyper::client::Client;
+use regex::Regex;
 
-/*
-    [{
-        "ContingencyAdj": [{
-                "AdjType": 1,
-                "DateFrom": "/Date(-62135568000000-0800)/",
-                "DateThru": "/Date(-62135568000000-0800)/",
-                "EventDescription": null,
-                "EventID": null,
-                "ReplacedBySchedRouteID": null
-            }],
-        "ContingencyOnly": false,
-        "Description": "Anacortes / Sidney B.C.",
-        "RegionID": 1,
-        "RouteAbbrev": "ana-sid",
-        "RouteID": 10,
-        "SchedRouteID": 1627,
-        "ScheduleID": 150,
-        "SeasonalRouteNotes": "Note: The earlier international sailing to Sidney, B.C. stops at Friday Harbor westbound to load vehicles and passengers destined to Sidney, B.C., and the later eastbound sailing stops to unload vehicles and passengers from Sidney, B.C. to the islands. ",
-        "ServiceDisruptions": []
-    }]
-*/
+struct Session {
+    api_key: &'static str,
+}
+
+impl Session {
+    fn new(api_key: &'static str) -> Session {
+        Session { api_key: api_key }
+    }
+
+    fn url(&self, path: &str) -> String {
+        format!("http://www.wsdot.wa.gov/ferries/api/schedule/rest{}?apiaccesscode={}",
+                path,
+                self.api_key)
+    }
+}
 
 #[allow(non_snake_case)]
-#[derive(RustcDecodable, RustcEncodable, Debug)]
-struct SchedRoute {
-    RouteID: u32,
-    Description: String,
-    RouteAbbrev: String,
+#[derive(RustcDecodable, Debug)]
+struct SailingTime {
+    DepartingTime: String,
+    ArrivingTime: Option<String>
+}
+
+
+impl SailingTime {
+    // parse strings of form "/Date(1436318400000-0700)/"
+    fn depart_time(&self, ltz: Local) -> DateTime<Local> {
+        let re = Regex::new(r"^/Date\((\d{10})000-(\d{2})(\d{2})\)/$").unwrap();
+        let caps = re.captures(&self.DepartingTime).unwrap();
+
+        let epoch_s = caps.at(1).unwrap();
+        let epoch: i64 =  epoch_s.parse().unwrap();
+
+        let tzhs = caps.at(2).unwrap();
+        let tzhi: i32 = tzhs.parse().unwrap();
+
+        let tzms = caps.at(3).unwrap();
+        let tzmi: i32 = tzms.parse().unwrap();
+
+        let nd = NaiveDateTime::from_timestamp(epoch, 0);
+        let tz = FixedOffset::west((tzhi * 3600) + (tzmi * 60));
+        let fotz: DateTime<FixedOffset> = DateTime::from_utc(nd, tz);
+        fotz.with_timezone(&ltz)
+    }
+}
+
+
+#[allow(non_snake_case)]
+#[derive(RustcDecodable, Debug)]
+struct TerminalCombo {
+    Times: Vec<SailingTime>,
+}
+
+#[allow(non_snake_case)]
+#[derive(RustcDecodable, Debug)]
+struct ScheduleResult {
+    TerminalCombos: Vec<TerminalCombo>,
 }
 
 fn main() {
-    let api_key: &'static str = env!("WSDOT_API_KEY");
-    let base = "http://www.wsdot.wa.gov/ferries/api/schedule/rest";
-    let url = &format!("{}/schedroutes?apiaccesscode={}", base, api_key);
-
+    let now = Local::now();
+    let s = Session::new(env!("WSDOT_API_KEY"));
+    let url = s.url("/schedule/2015-07-06/7/3");
     println!("{}", url);
+
     let client = Client::new();
-    let mut res = client.get(url).send().unwrap();
+    let mut res = client.get(&url).send().unwrap();
 
     assert_eq!(res.status, hyper::Ok);
     let mut s = String::new();
     res.read_to_string(&mut s).unwrap();
-    let routs: Vec<SchedRoute> = json::decode(&s).unwrap();
-    println!("{:?}", routs);
+    let routes: ScheduleResult = json::decode(&s).unwrap();
+
+    assert_eq!(1, routes.TerminalCombos.len());
+    for time in routes.TerminalCombos[0].Times.iter() {
+        let dt = time.depart_time(now.timezone());
+        if dt > now {
+            println!("{}", dt.time());
+        }
+    }
+}
+
+#[test]
+fn test_regex() {
+    // parse strings of form "/Date(1436318400000-0700)/"
+    let re = Regex::new(r"^/Date\((\d{10})000-(\d{4})\)/$").unwrap();
+    let caps = re.captures("/Date(1436318400000-0700)/").unwrap();
+    assert_eq!(caps.at(1).unwrap(), "1436318400");
+    assert_eq!(caps.at(2).unwrap(), "0700");
 }
