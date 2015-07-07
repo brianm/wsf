@@ -3,10 +3,11 @@ extern crate rustc_serialize;
 extern crate chrono;
 extern crate regex;
 
-use chrono::*;
-
-use rustc_serialize::json;
 use std::io::Read;
+use std::env;
+
+use chrono::*;
+use rustc_serialize::json;
 use hyper::client::Client;
 use regex::Regex;
 
@@ -19,7 +20,7 @@ impl Session {
         Session { api_key: api_key }
     }
 
-    fn url(&self, path: &str) -> String {
+    fn url(&self, path: String) -> String {
         format!("http://www.wsdot.wa.gov/ferries/api/schedule/rest{}?apiaccesscode={}",
                 path,
                 self.api_key)
@@ -70,13 +71,23 @@ struct ScheduleResult {
 }
 
 fn main() {
+    let mut args = env::args();
+    let _program = args.next().unwrap();
+    let route: &str = &args.next().expect("must pass one of sea-bi or bi-sea");
+
+    let (from, to) = match route {
+        "sea-bi" => (7,3),
+        "bi-sea" => (3, 7),
+        _ => panic!("only bi-sea and sea-bi supported"),
+    };
+
     let now = Local::now();
     let s = Session::new(env!("WSDOT_API_KEY"));
-    let url = s.url("/schedule/2015-07-06/7/3");
-    println!("{}", url);
+    let url = &s.url(format!("/schedule/2015-07-06/{}/{}", from, to));
+    // println!("{}", url);
 
     let client = Client::new();
-    let mut res = client.get(&url).send().unwrap();
+    let mut res = client.get(url).send().unwrap();
 
     assert_eq!(res.status, hyper::Ok);
     let mut s = String::new();
