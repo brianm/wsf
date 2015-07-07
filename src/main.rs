@@ -73,7 +73,8 @@ struct ScheduleResult {
 fn main() {
     let mut args = env::args();
     let _program = args.next().unwrap();
-    let route: &str = &args.next().expect("must pass one of sea-bi or bi-sea");
+    let route: &str = &args.next()
+                           .expect("must pass one of sea-bi or bi-sea");
 
     let (from, to) = match route {
         "sea-bi" => (7,3),
@@ -83,8 +84,10 @@ fn main() {
 
     let now = Local::now();
     let s = Session::new(env!("WSDOT_API_KEY"));
-    let url = &s.url(format!("/schedule/2015-07-06/{}/{}", from, to));
-    // println!("{}", url);
+    let url = &s.url(format!("/schedule/{}-{}-{}/{}/{}",
+                             now.year(), now.month(), now.day(),
+                             from, to));
+    //println!("{}", url);
 
     let client = Client::new();
     let mut res = client.get(url).send().unwrap();
