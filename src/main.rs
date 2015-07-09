@@ -54,7 +54,10 @@ fn main() {
     for time in tc.Times.iter() {
         if time.depart_time() > now {
             println!("{}\t{}\t{}\t{}",
-            time.depart_time().time(), tc.DepartingTerminalName, tc.ArrivingTerminalName, time.VesselName );
+                     time.depart_time().time(),
+                     tc.DepartingTerminalName,
+                     tc.ArrivingTerminalName,
+                     time.VesselName );
         }
 
     }
@@ -137,15 +140,4 @@ struct TerminalCombo {
 #[derive(RustcDecodable, RustcEncodable, Debug)]
 struct ScheduleResult {
     TerminalCombos: Vec<TerminalCombo>,
-}
-
-#[test]
-fn test_hashmap() {
-    let mut h: HashMap<&str, i32> = HashMap::new();
-    h.insert("bi", 3);
-    h.insert("sea", 7);
-    match h.get("bi") {
-        Some(id) => assert_eq!(*id, 3),
-        None => assert!(false)
-    }
 }
