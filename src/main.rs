@@ -125,7 +125,7 @@ impl Session {
     }
 
     fn terminals(&mut self) -> Result<Vec<Terminal>, String> {
-        if self.cache.cache_flush_date == self.cacheflushdate {
+        if self.offline || (self.cache.cache_flush_date == self.cacheflushdate) {
             return Ok(self.cache.terminals.clone())
         }
         else {
@@ -144,7 +144,7 @@ impl Session {
         let mut cache_is_stale = true;
         let cache_key = format!("{} {}", from, to);
 
-        if self.cache.cache_flush_date == self.cacheflushdate {
+        if self.offline || (self.cache.cache_flush_date == self.cacheflushdate) {
             if self.cache.sailings.contains_key(&cache_key) {
                 // cache is up to date and has route!
                 // unwrap is correct as we checked for enry first
