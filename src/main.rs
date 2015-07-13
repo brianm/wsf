@@ -20,6 +20,7 @@ use chrono::datetime::DateTime;
 use chrono::Datelike;
 
 use rustc_serialize::json;
+use rustc_serialize::Decodable;
 use hyper::client::Client;
 use regex::Regex;
 
@@ -37,7 +38,7 @@ fn main() {
     let now = Local::now();
     let mut from: Option<i32> = None;
     let mut to: Option<i32> = None;
-    for terminal in s.terminals().iter() {
+    for terminal in s.terminals().unwrap().iter() {
         if terminal.Description.to_ascii_lowercase().starts_with(&from_in) {
             from = Some(terminal.TerminalID);
         }
@@ -46,7 +47,7 @@ fn main() {
         }
     }
 
-    let tc = s.schedule(from.unwrap(), to.unwrap());
+    let tc = s.schedule(from.unwrap(), to.unwrap()).unwrap();
     for time in tc.Times.iter() {
         if time.depart_time() > now {
             println!("{}\t{}\t{}\t{}",
@@ -66,6 +67,7 @@ struct Session {
     cache: Cache,
     cacheflushdate: String,
     cache_path: String,
+    offline: bool,
 }
 
 impl Session {
@@ -81,12 +83,16 @@ impl Session {
             cache: Cache::load(&cache_path),
             cacheflushdate: String::new(),
             cache_path: cache_path,
+            offline: false,
         };
 
-        let url = &s.url(format!("/cacheflushdate"));
-        let mut r = s.client.get(url).send().unwrap();
-        assert_eq!(r.status, hyper::Ok);
-        r.read_to_string(&mut s.cacheflushdate).unwrap();
+        s.offline = match s.get::<String>(format!("/cacheflushdate")) {
+            Ok(cfd) => {
+                    s.cacheflushdate = cfd;
+                    false
+                },
+            Err(_) => true,
+        };
         s
     }
 
@@ -97,39 +103,52 @@ impl Session {
         f.write_all(encoded.as_bytes()).unwrap();
     }
 
-    fn url(&self, path: String) -> String {
-        format!("http://www.wsdot.wa.gov/ferries/api/schedule/rest{}?apiaccesscode={}",
-                path,
-                self.api_key)
+    fn get<T: Decodable>(&self, path: String) -> Result<T, String> {
+        let url = &format!("http://www.wsdot.wa.gov/ferries/api/schedule/rest{}?apiaccesscode={}",
+                            path,
+                            self.api_key);
+        let mut res = match self.client.get(url).send() {
+            Ok(r) => r,
+            Err(e) => return Err(format!("{}", e)),
+        };
+        assert_eq!(res.status, hyper::Ok);
+
+        let mut buf = String::new();
+        match res.read_to_string(&mut buf) {
+            Ok(_) => (),
+            Err(e) => return Err(format!("{}", e)),
+        };
+        match json::decode::<T>(&buf) {
+            Ok(t) => Ok(t),
+            Err(e) => Err(format!("{}", e)),
+        }
     }
 
-    fn terminals(&mut self) -> Vec<Terminal> {
+    fn terminals(&mut self) -> Result<Vec<Terminal>, String> {
         if self.cache.cache_flush_date == self.cacheflushdate {
-            self.cache.terminals.clone()
+            return Ok(self.cache.terminals.clone())
         }
         else {
             let now = Local::today();
-            let url = &self.url(format!("/terminals/{}-{}-{}", now.year(), now.month(), now.day()));
-
-            let mut res = self.client.get(url).send().unwrap();
-            assert_eq!(res.status, hyper::Ok);
-
-            let mut buf = String::new();
-            res.read_to_string(&mut buf).unwrap();
-            let routes: Vec<Terminal> = json::decode(&buf).unwrap();
+            let path = format!("/terminals/{}-{}-{}", now.year(), now.month(), now.day());
+            let routes: Vec<Terminal> = match self.get(path) {
+                Ok(r) => r,
+                Err(e) => return Err(e),
+            };
             self.cache.terminals = routes.clone();
-            routes
+            return Ok(routes);
         }
     }
 
-    fn schedule(&mut self, from: i32, to: i32) -> TerminalCombo {
+    fn schedule(&mut self, from: i32, to: i32) -> Result<TerminalCombo, String> {
         let mut cache_is_stale = true;
         let cache_key = format!("{} {}", from, to);
 
         if self.cache.cache_flush_date == self.cacheflushdate {
             if self.cache.sailings.contains_key(&cache_key) {
                 // cache is up to date and has route!
-                return self.cache.sailings.get(&cache_key).unwrap().clone()
+                // unwrap is correct as we checked for enry first
+                return Ok(self.cache.sailings.get(&cache_key).unwrap().clone());
             }
             else {
                 // cache is up to date, but we don't have this route in it
@@ -142,17 +161,16 @@ impl Session {
         }
 
         let now = Local::now();
-        let url = &self.url(format!("/schedule/{}-{}-{}/{}/{}",
-                                    now.year(), now.month(), now.day(), from, to));
+        let path = format!("/schedule/{}-{}-{}/{}/{}",
+                            now.year(), now.month(), now.day(), from, to);
 
-        let mut res = self.client.get(url).send().unwrap();
-        assert_eq!(res.status, hyper::Ok);
+        let schedule: ScheduleResult = match self.get(path) {
+            Ok(r) => r,
+            Err(e) => return Err(e),
+        };
 
-        let mut buf = String::new();
-        res.read_to_string(&mut buf).unwrap();
-        let schedule: ScheduleResult = json::decode(&buf).unwrap();
         self.cache.sailings.insert(cache_key, schedule.TerminalCombos[0].clone());
-        schedule.TerminalCombos[0].clone()
+        Ok(schedule.TerminalCombos[0].clone())
     }
 }
 
