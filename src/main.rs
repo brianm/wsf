@@ -29,8 +29,8 @@ fn main() {
 
     let mut args      = env::args();
     let _program      = args.next().expect("program should be first arg!");
-    let from_in: &str = &args.next().expect("must specify from");
-    let to_in: &str   = &args.next().expect("must specify to");
+    let from_in: &str = &args.next().expect("must specify from").to_ascii_lowercase();
+    let to_in: &str   = &args.next().expect("must specify to").to_ascii_lowercase();
 
     // pull in api key at *build* time from environment
     let mut s = Session::new(env!("WSDOT_API_KEY"));

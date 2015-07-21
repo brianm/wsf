@@ -1,7 +1,8 @@
 build: man
 	cargo build --release
 
-man:
+man: wsf.1
+wsf.1:
 	a2x --doctype manpage --format manpage README.adoc
 
 clean:
