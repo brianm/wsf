@@ -4,6 +4,7 @@ extern crate chrono;
 extern crate regex;
 extern crate env_logger;
 #[macro_use] extern crate log;
+extern crate docopt;
 
 use std::ascii::AsciiExt;
 use std::io::Read;
@@ -12,6 +13,9 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
+use std::fmt;
+use std::error::Error;
+use std::result;
 
 use chrono::naive::datetime::NaiveDateTime;
 use chrono::offset::local::Local;
@@ -22,15 +26,41 @@ use chrono::Datelike;
 use rustc_serialize::json;
 use rustc_serialize::Decodable;
 use hyper::client::Client;
+
 use regex::Regex;
+
+use docopt::Docopt;
+
+static USAGE: &'static str = "
+Washing State Ferry Schedules
+
+Usage:
+  wsf [options] <from> <to>
+  wsf -h
+
+  <from> and <to> are a prefix of the departing terminal and arriving
+  terminal, respectively. For example 'wsf sea ba' is equivalent to
+  'wsf Seattle \"Bainbridge Island\"'.
+
+Options:
+  -h --help     Show this screen.
+";
+
+#[derive(Debug, RustcDecodable)]
+struct Args {
+    arg_from: String,
+    arg_to: String,
+}
 
 fn main() {
     env_logger::init().unwrap();
 
-    let mut args      = env::args();
-    let _program      = args.next().expect("program should be first arg!");
-    let from_in: &str = &args.next().expect("must specify from").to_ascii_lowercase();
-    let to_in: &str   = &args.next().expect("must specify to").to_ascii_lowercase();
+    let args: Args = Docopt::new(USAGE)
+                            .and_then(|d| d.decode())
+                            .unwrap_or_else(|e| e.exit());
+
+    let from_in: &str =  &args.arg_from.to_ascii_lowercase();
+    let to_in: &str   = &args.arg_to.to_ascii_lowercase();
 
     // pull in api key at *build* time from environment
     let mut s = Session::new(env!("WSDOT_API_KEY"));
@@ -103,44 +133,32 @@ impl Session {
         f.write_all(encoded.as_bytes()).unwrap();
     }
 
-    fn get<T: Decodable>(&self, path: String) -> Result<T, String> {
+    fn get<T: Decodable>(&self, path: String) -> Result<T> {
         let url = &format!("http://www.wsdot.wa.gov/ferries/api/schedule/rest{}?apiaccesscode={}",
                             path,
                             self.api_key);
-        let mut res = match self.client.get(url).send() {
-            Ok(r) => r,
-            Err(e) => return Err(format!("{}", e)),
-        };
+        let mut res = try!(self.client.get(url).send());
         assert_eq!(res.status, hyper::Ok);
 
         let mut buf = String::new();
-        match res.read_to_string(&mut buf) {
-            Ok(_) => (),
-            Err(e) => return Err(format!("{}", e)),
-        };
-        match json::decode::<T>(&buf) {
-            Ok(t) => Ok(t),
-            Err(e) => Err(format!("{}", e)),
-        }
+        try!(res.read_to_string(&mut buf));
+        Ok(try!(json::decode::<T>(&buf)))
     }
 
-    fn terminals(&mut self) -> Result<Vec<Terminal>, String> {
+    fn terminals(&mut self) -> Result<Vec<Terminal>> {
         if self.offline || (self.cache.cache_flush_date == self.cacheflushdate) {
             return Ok(self.cache.terminals.clone())
         }
         else {
             let now = Local::today();
             let path = format!("/terminals/{}-{}-{}", now.year(), now.month(), now.day());
-            let routes: Vec<Terminal> = match self.get(path) {
-                Ok(r) => r,
-                Err(e) => return Err(e),
-            };
+            let routes: Vec<Terminal> = try!(self.get(path));
             self.cache.terminals = routes.clone();
             return Ok(routes);
         }
     }
 
-    fn schedule(&mut self, from: i32, to: i32) -> Result<TerminalCombo, String> {
+    fn schedule(&mut self, from: i32, to: i32) -> Result<TerminalCombo> {
         let mut cache_is_stale = true;
         let cache_key = format!("{} {}", from, to);
 
@@ -164,10 +182,7 @@ impl Session {
         let path = format!("/schedule/{}-{}-{}/{}/{}",
                             now.year(), now.month(), now.day(), from, to);
 
-        let schedule: ScheduleResult = match self.get(path) {
-            Ok(r) => r,
-            Err(e) => return Err(e),
-        };
+        let schedule: Schedule = try!(self.get(path));
 
         self.cache.sailings.insert(cache_key, schedule.TerminalCombos[0].clone());
         Ok(schedule.TerminalCombos[0].clone())
@@ -244,6 +259,62 @@ struct TerminalCombo {
 
 #[allow(non_snake_case)]
 #[derive(RustcDecodable, RustcEncodable, Debug)]
-struct ScheduleResult {
+struct Schedule {
     TerminalCombos: Vec<TerminalCombo>,
+}
+
+type Result<T> = result::Result<T, CliError>;
+
+#[derive(Debug)]
+enum CliError {
+    Parse(rustc_serialize::json::DecoderError),
+    Http(hyper::error::Error),
+    Input(std::io::Error),
+}
+
+
+impl From<hyper::error::Error> for CliError {
+    fn from(err: hyper::error::Error) -> CliError {
+        CliError::Http(err)
+    }
+}
+
+
+impl From<std::io::Error> for CliError {
+    fn from(err: std::io::Error) -> CliError {
+        CliError::Input(err)
+    }
+}
+
+impl From<rustc_serialize::json::DecoderError> for CliError {
+    fn from(err: rustc_serialize::json::DecoderError) -> CliError {
+        CliError::Parse(err)
+    }
+}
+
+impl fmt::Display for CliError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        /*
+        match *self {
+            CliError::Io(ref err) => err.fmt(f),
+            CliError::Csv(ref err) => err.fmt(f),
+            CliError::NotFound => write!(f, "No matching cities with a \
+                                             population were found."),
+        }
+        */
+        write!(f, "oops!")
+    }
+}
+
+impl Error for CliError {
+    fn description(&self) -> &str {
+        /*
+        match *self {
+            CliError::Io(ref err) => err.description(),
+            CliError::Csv(ref err) => err.description(),
+            CliError::NotFound => "not found",
+        }
+        */
+        "broke and went boom"
+    }
 }
