@@ -126,7 +126,7 @@ impl Session {
             offline: false,
         };
 
-        s.offline = match s.get::<String>(format!("/cacheflushdate")) {
+        s.offline = match s.get::<String>("/cacheflushdate".to_owned()) {
             Ok(cfd) => {
                     s.cacheflushdate = cfd;
                     false
