@@ -52,8 +52,8 @@ struct Args {
     arg_to: String,
 }
 
-fn main() {
-    env_logger::init().unwrap();
+fn run() -> Result<()> {
+    try!(env_logger::init());
 
     let args: Args = Docopt::new(USAGE)
                             .and_then(|d| d.decode())
@@ -88,7 +88,17 @@ fn main() {
         }
 
     }
-    s.save_cache();
+    s.save_cache()
+}
+
+fn main() {
+    match run() {
+        Ok(_) => {},
+        Err(e) => {
+            println!("");
+            std::process::exit(1);
+        }
+    }
 }
 
 struct Session {
@@ -126,11 +136,12 @@ impl Session {
         s
     }
 
-    fn save_cache(&mut self) {
+    fn save_cache(&mut self) -> Result<()> {
         self.cache.cache_flush_date = self.cacheflushdate.clone();
-        let mut f = File::create(&self.cache_path).unwrap();
-        let encoded = json::encode(&self.cache).unwrap();
-        f.write_all(encoded.as_bytes()).unwrap();
+
+        let mut f = try!(File::create(&self.cache_path));
+        let encoded = try!(json::encode(&self.cache));
+        Ok(try!(f.write_all(encoded.as_bytes())))
     }
 
     fn get<T: Decodable>(&self, path: String) -> Result<T> {
@@ -267,22 +278,34 @@ type Result<T> = result::Result<T, CliError>;
 
 #[derive(Debug)]
 enum CliError {
+    Log(log::SetLoggerError),
     Parse(rustc_serialize::json::DecoderError),
+    SaveCache(rustc_serialize::json::EncoderError),
     Http(hyper::error::Error),
-    Input(std::io::Error),
+    Io(std::io::Error),
+    BrokenReality(String),
 }
 
+impl From<rustc_serialize::json::EncoderError> for CliError {
+    fn from(err: rustc_serialize::json::EncoderError) -> CliError {
+        CliError::SaveCache(err)
+    }
+}
 
+impl From<log::SetLoggerError> for CliError {
+    fn from(err: log::SetLoggerError) -> CliError {
+        CliError::Log(err)
+    }
+}
 impl From<hyper::error::Error> for CliError {
     fn from(err: hyper::error::Error) -> CliError {
         CliError::Http(err)
     }
 }
 
-
 impl From<std::io::Error> for CliError {
     fn from(err: std::io::Error) -> CliError {
-        CliError::Input(err)
+        CliError::Io(err)
     }
 }
 
@@ -294,7 +317,9 @@ impl From<rustc_serialize::json::DecoderError> for CliError {
 
 impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        unimplemented!();
         /*
+        TODO implement
         match *self {
             CliError::Io(ref err) => err.fmt(f),
             CliError::Csv(ref err) => err.fmt(f),
@@ -308,7 +333,9 @@ impl fmt::Display for CliError {
 
 impl Error for CliError {
     fn description(&self) -> &str {
+        unimplemented!();
         /*
+        TODO implement
         match *self {
             CliError::Io(ref err) => err.description(),
             CliError::Csv(ref err) => err.description(),
