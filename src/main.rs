@@ -59,7 +59,7 @@ fn run() -> Result<()> {
                             .and_then(|d| d.decode())
                             .unwrap_or_else(|e| e.exit());
 
-    let from_in: &str =  &args.arg_from.to_ascii_lowercase();
+    let from_in: &str = &args.arg_from.to_ascii_lowercase();
     let to_in: &str   = &args.arg_to.to_ascii_lowercase();
 
     // pull in api key at *build* time from environment
@@ -76,8 +76,9 @@ fn run() -> Result<()> {
             to = Some(terminal.TerminalID);
         }
     }
-
-    let tc = s.schedule(from.unwrap(), to.unwrap()).unwrap();
+    let from = try!(from.ok_or(CliError::BadInput(format!("'{}' is not a known port!", from_in))));
+    let to = try!(to.ok_or(CliError::BadInput(format!("'{}' is not a known port!", to_in))));
+    let tc = s.schedule(from, to).unwrap();
     for time in tc.Times.iter() {
         if time.depart_time() > now {
             println!("{}\t{}\t{}\t{}",
@@ -95,7 +96,7 @@ fn main() {
     match run() {
         Ok(_) => {},
         Err(e) => {
-            println!("");
+            println!("{}", e);
             std::process::exit(1);
         }
     }
@@ -283,7 +284,31 @@ enum CliError {
     SaveCache(rustc_serialize::json::EncoderError),
     Http(hyper::error::Error),
     Io(std::io::Error),
-    BrokenReality(String),
+    BadInput(String),
+}
+
+
+impl fmt::Display for CliError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            CliError::Log(ref err) => format!("Unable to configure logging: {}", err).fmt(f),
+            CliError::Parse(ref err) => format!("Unable to parse WSDOT Data: {}", err).fmt(f),
+            CliError::SaveCache(ref err) => format!("Unable to save cache: {}", err).fmt(f),
+            CliError::Http(ref err) => format!("Unable to communicate with WSDOT: {}", err).fmt(f),
+            CliError::Io(ref err) => format!("Unable to read data: {}", err).fmt(f),
+            CliError::BadInput(ref desc) => format!("Unable to understand input: {}", desc).fmt(f),
+        }
+    }
+}
+
+
+impl Error for CliError {
+    fn description(&self) -> &str {
+        match *self {
+            CliError::BadInput(ref err) => err,
+            _ => self.description(),
+        }
+    }
 }
 
 impl From<rustc_serialize::json::EncoderError> for CliError {
@@ -312,36 +337,5 @@ impl From<std::io::Error> for CliError {
 impl From<rustc_serialize::json::DecoderError> for CliError {
     fn from(err: rustc_serialize::json::DecoderError) -> CliError {
         CliError::Parse(err)
-    }
-}
-
-impl fmt::Display for CliError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        unimplemented!();
-        /*
-        TODO implement
-        match *self {
-            CliError::Io(ref err) => err.fmt(f),
-            CliError::Csv(ref err) => err.fmt(f),
-            CliError::NotFound => write!(f, "No matching cities with a \
-                                             population were found."),
-        }
-        */
-        write!(f, "oops!")
-    }
-}
-
-impl Error for CliError {
-    fn description(&self) -> &str {
-        unimplemented!();
-        /*
-        TODO implement
-        match *self {
-            CliError::Io(ref err) => err.description(),
-            CliError::Csv(ref err) => err.description(),
-            CliError::NotFound => "not found",
-        }
-        */
-        "broke and went boom"
     }
 }
