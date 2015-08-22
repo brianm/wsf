@@ -68,7 +68,7 @@ fn run() -> Result<()> {
     let now = Local::now();
     let mut from: Option<i32> = None;
     let mut to: Option<i32> = None;
-    for terminal in s.terminals().unwrap().iter() {
+    for terminal in try!(s.terminals()).iter() {
         if terminal.Description.to_ascii_lowercase().starts_with(&from_in) {
             from = Some(terminal.TerminalID);
         }
@@ -78,7 +78,7 @@ fn run() -> Result<()> {
     }
     let from = try!(from.ok_or(CliError::BadInput(format!("'{}' is not a known port!", from_in))));
     let to = try!(to.ok_or(CliError::BadInput(format!("'{}' is not a known port!", to_in))));
-    let tc = s.schedule(from, to).unwrap();
+    let tc = try!(s.schedule(from, to));
     for time in tc.Times.iter() {
         if time.depart_time() > now {
             println!("{}\t{}\t{}\t{}",
@@ -87,7 +87,6 @@ fn run() -> Result<()> {
                      tc.ArrivingTerminalName,
                      time.VesselName );
         }
-
     }
     s.save_cache()
 }
@@ -134,7 +133,7 @@ impl Session {
                 },
             Err(_) => true,
         };
-        s
+        return s;
     }
 
     fn save_cache(&mut self) -> Result<()> {
@@ -305,7 +304,7 @@ impl fmt::Display for CliError {
 impl Error for CliError {
     fn description(&self) -> &str {
         match *self {
-            CliError::BadInput(ref err) => err,
+            CliError::BadInput(ref err) => err,            
             _ => self.description(),
         }
     }
