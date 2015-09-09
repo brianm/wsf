@@ -126,6 +126,7 @@ impl Session {
             offline: false,
         };
 
+        // TODO this is kind of gross, cfd as optional to indicate offline, maybe?
         s.offline = match s.get::<String>("/cacheflushdate".to_owned()) {
             Ok(cfd) => {
                     s.cacheflushdate = cfd;
