@@ -1,39 +1,32 @@
-WSF(1)
-======
-:doctype: manpage
+% WSF(1)
+% Brian McCallister <brianm@skife.org>
+% $date$
 
+# NAME
 
-NAME
-----
 wsf - Displays Washington State Ferry schedules
 
 
-SYNOPSIS
---------
-*wsf* 'FROM' 'TO'
+# SYNOPSIS
+
+**wsf** 'FROM' 'TO'
 
 FROM and TO are a prefix of the departing terminal and arriving
 terminal, respectively. For example 'wsf sea ba' is equivalent to
 'wsf Seattle "Bainbridge Island"'.
 
 
-DESCRIPTION
------------
+# DESCRIPTION
+
 The wsf(1) displays ferry schedules for the rest of the current day.
 
+# RESOURCES
 
-AUTHOR
-------
-wsf is by Brian McCallister <brianm@skife.org>
+Source
+:    <https://github.com/brianm/wsf/>
 
+# COPYING
 
-RESOURCES
----------
-Source: <https://github.com/brianm/wsf/>
-
-
-COPYING
--------
 Copyright 2015 Brian McCallister
 
 Licensed under the Apache License, Version 2.0 (the "License");
