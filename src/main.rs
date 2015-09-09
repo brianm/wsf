@@ -3,7 +3,7 @@ extern crate rustc_serialize;
 extern crate chrono;
 extern crate regex;
 extern crate env_logger;
-#[macro_use] extern crate log;
+extern crate log;
 extern crate docopt;
 
 use std::ascii::AsciiExt;
