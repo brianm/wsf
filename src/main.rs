@@ -120,7 +120,7 @@ impl Session {
         let mut s = Session {
             api_key: api_key.to_string(),
             client: Client::new(),
-            cache: Cache::load(&cache_path),
+            cache: Cache::load(&cache_path).unwrap_or(Cache::empty()),
             cacheflushdate: String::new(),
             cache_path: cache_path,
             offline: false,
@@ -176,8 +176,9 @@ impl Session {
         if self.offline || (self.cache.cache_flush_date == self.cacheflushdate) {
             if self.cache.sailings.contains_key(&cache_key) {
                 // cache is up to date and has route!
-                // unwrap is correct as we checked for enry first
-                return Ok(self.cache.sailings.get(&cache_key).unwrap().clone());
+                return Ok(self.cache.sailings.get(&cache_key)
+                                              .expect("checked for key in cache then not found")
+                                              .clone());
             }
             else {
                 // cache is up to date, but we don't have this route in it
@@ -208,23 +209,21 @@ struct Cache {
 }
 
 impl Cache {
-    fn load(path: &String) -> Cache {
-        let r = File::open(path);
-        match r {
-            Ok(mut f) => {
-                let mut s = String::new();
-                f.read_to_string(&mut s).unwrap();
-                let cache = json::decode(&s).unwrap();
-                cache
-            },
-            Err(_) => {
-                Cache {
-                    terminals: vec![],
-                    sailings: HashMap::new(),
-                    cache_flush_date: String::new(),
-                }
-            }
+
+    fn empty() -> Cache {
+        Cache {
+            terminals: vec![],
+            sailings: HashMap::new(),
+            cache_flush_date: String::new(),
         }
+    }
+
+    fn load(path: &String) -> Result<Cache> {
+        let mut f = try!(File::open(path));
+        let mut s = String::new();
+        try!(f.read_to_string(&mut s));
+        let cache: Cache = try!(json::decode(&s));
+        Ok(cache)
     }
 }
 
@@ -304,7 +303,7 @@ impl fmt::Display for CliError {
 impl Error for CliError {
     fn description(&self) -> &str {
         match *self {
-            CliError::BadInput(ref err) => err,            
+            CliError::BadInput(ref err) => err,
             _ => self.description(),
         }
     }
