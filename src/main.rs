@@ -95,6 +95,7 @@ fn main() {
     match run() {
         Ok(_) => {},
         Err(e) => {
+            // TODO print to STDERR instead of STDOUT
             println!("{}", e);
             std::process::exit(1);
         }
