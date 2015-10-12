@@ -62,8 +62,7 @@ fn run() -> Result<()> {
     let from_in: &str = &args.arg_from.to_ascii_lowercase();
     let to_in: &str   = &args.arg_to.to_ascii_lowercase();
 
-    // pull in api key at *build* time from environment
-    let mut s = Session::new(env!("WSDOT_API_KEY"));
+    let mut s = Session::new("afddf683-37c5-4d1a-8486-f7004a16d86d");
 
     let now = Local::now();
     let mut from: Option<i32> = None;
