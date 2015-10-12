@@ -1,6 +1,6 @@
-# wsf - Display Washington State Ferry schedules
+# Washington State Ferry Schedules
 
-wsf(1) displays ferry schedules for the remainder of the current day.
+wsf(1) is a cli tool to display WSF ferry schedules for the rest of the current day.
 
 # Installation
 
