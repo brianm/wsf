@@ -1,6 +1,6 @@
 [root]
 name = "wsf"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "chrono 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "docopt 0.6.74 (registry+https://github.com/rust-lang/crates.io-index)",
