@@ -115,7 +115,7 @@ impl Session {
     fn new(api_key: &str) -> Session {
         let mut cache_path: PathBuf = env::home_dir().unwrap();
         cache_path.push(".wsf.cache");
-        let cache_path = format!("{}", cache_path.display());
+        let cache_path = cache_path.display().to_string();
 
         let mut s = Session {
             api_key: api_key.to_string(),
