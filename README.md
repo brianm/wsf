@@ -15,3 +15,8 @@ $ brew install wsf
 # Usage
 
 See [man page](wsf.1.md)
+
+# Building
+
+OS X no longer ships with a working openssl, to build you'll need to
+install it. Generally, follow the instructions for [rust-openssl](https://github.com/sfackler/rust-openssl#osx)
