@@ -1,6 +1,6 @@
 [package]
 name = "wsf"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Brian McCallister <brianm@skife.org>"]
 
 [dependencies]
