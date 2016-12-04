@@ -56,11 +56,11 @@ fn run() -> Result<()> {
     try!(env_logger::init());
 
     let args: Args = Docopt::new(USAGE)
-                            .and_then(|d| d.decode())
-                            .unwrap_or_else(|e| e.exit());
+        .and_then(|d| d.decode())
+        .unwrap_or_else(|e| e.exit());
 
     let from_in: &str = &args.arg_from.to_ascii_lowercase();
-    let to_in: &str   = &args.arg_to.to_ascii_lowercase();
+    let to_in: &str = &args.arg_to.to_ascii_lowercase();
 
     let mut s = Session::new("afddf683-37c5-4d1a-8486-f7004a16d86d");
 
@@ -84,7 +84,7 @@ fn run() -> Result<()> {
                      time.depart_time().time(),
                      tc.DepartingTerminalName,
                      tc.ArrivingTerminalName,
-                     time.VesselName );
+                     time.VesselName);
         }
     }
     s.save_cache()
@@ -92,7 +92,7 @@ fn run() -> Result<()> {
 
 fn main() {
     match run() {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(e) => {
             // TODO print to STDERR instead of STDOUT
             println!("{}", e);
@@ -111,7 +111,6 @@ struct Session {
 }
 
 impl Session {
-
     fn new(api_key: &str) -> Session {
         let mut cache_path: PathBuf = env::home_dir().unwrap();
         cache_path.push(".wsf.cache");
@@ -129,9 +128,9 @@ impl Session {
         // TODO this is kind of gross, cfd as optional to indicate offline, maybe?
         s.offline = match s.get::<String>("/cacheflushdate".to_owned()) {
             Ok(cfd) => {
-                    s.cacheflushdate = cfd;
-                    false
-                },
+                s.cacheflushdate = cfd;
+                false
+            }
             Err(_) => true,
         };
         return s;
@@ -147,8 +146,8 @@ impl Session {
 
     fn get<T: Decodable>(&self, path: String) -> Result<T> {
         let url = &format!("http://www.wsdot.wa.gov/ferries/api/schedule/rest{}?apiaccesscode={}",
-                            path,
-                            self.api_key);
+                           path,
+                           self.api_key);
         let mut res = try!(self.client.get(url).send());
         assert_eq!(res.status, hyper::Ok);
 
@@ -159,9 +158,8 @@ impl Session {
 
     fn terminals(&mut self) -> Result<Vec<Terminal>> {
         if self.offline || (self.cache.cache_flush_date == self.cacheflushdate) {
-            return Ok(self.cache.terminals.clone())
-        }
-        else {
+            return Ok(self.cache.terminals.clone());
+        } else {
             let now = Local::today();
             let path = format!("/terminals/{}-{}-{}", now.year(), now.month(), now.day());
             let routes: Vec<Terminal> = try!(self.get(path));
@@ -177,11 +175,12 @@ impl Session {
         if self.offline || (self.cache.cache_flush_date == self.cacheflushdate) {
             if self.cache.sailings.contains_key(&cache_key) {
                 // cache is up to date and has route!
-                return Ok(self.cache.sailings.get(&cache_key)
-                                              .expect("checked for key in cache then not found")
-                                              .clone());
-            }
-            else {
+                return Ok(self.cache
+                    .sailings
+                    .get(&cache_key)
+                    .expect("checked for key in cache then not found")
+                    .clone());
+            } else {
                 // cache is up to date, but we don't have this route in it
                 cache_is_stale = false;
             }
@@ -193,7 +192,11 @@ impl Session {
 
         let now = Local::now();
         let path = format!("/schedule/{}-{}-{}/{}/{}",
-                            now.year(), now.month(), now.day(), from, to);
+                           now.year(),
+                           now.month(),
+                           now.day(),
+                           from,
+                           to);
 
         let schedule: Schedule = try!(self.get(path));
 
@@ -210,7 +213,6 @@ struct Cache {
 }
 
 impl Cache {
-
     fn empty() -> Cache {
         Cache {
             terminals: vec![],
