@@ -1,6 +1,6 @@
 [package]
 name = "wsf"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Brian McCallister <brianm@skife.org>"]
 build = "build.rs"
 
