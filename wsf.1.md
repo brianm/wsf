@@ -1,6 +1,5 @@
 % WSF(1)
 % Brian McCallister <brianm@skife.org>
-% $date$
 
 # NAME
 

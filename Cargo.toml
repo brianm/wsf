@@ -1,7 +1,8 @@
 [package]
 name = "wsf"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Brian McCallister <brianm@skife.org>"]
+build = "build.rs"
 
 [dependencies]
 hyper = "0.9"
