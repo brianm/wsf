@@ -288,7 +288,6 @@ enum CliError {
     BadInput(String),
 }
 
-
 impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -301,7 +300,6 @@ impl fmt::Display for CliError {
         }
     }
 }
-
 
 impl Error for CliError {
     fn description(&self) -> &str {
@@ -323,6 +321,7 @@ impl From<log::SetLoggerError> for CliError {
         CliError::Log(err)
     }
 }
+
 impl From<hyper::error::Error> for CliError {
     fn from(err: hyper::error::Error) -> CliError {
         CliError::Http(err)
