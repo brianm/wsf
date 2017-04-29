@@ -36,13 +36,13 @@ Washing State Ferry Schedules
 
 Usage:
   wsf [options] <from> <to>
-  wsf -h
-
+  
   <from> and <to> are a prefix of the departing terminal and arriving
   terminal, respectively. For example 'wsf sea ba' is equivalent to
   'wsf Seattle \"Bainbridge Island\"'.
 
 Options:
+  -a --all      Show all times for today, not just remaining
   -h --help     Show this screen.
 ";
 
@@ -50,6 +50,7 @@ Options:
 struct Args {
     arg_from: String,
     arg_to: String,
+    flag_all: bool,
 }
 
 fn run() -> Result<()> {
@@ -78,13 +79,22 @@ fn run() -> Result<()> {
     let from = try!(from.ok_or(CliError::BadInput(format!("'{}' is not a known port!", from_in))));
     let to = try!(to.ok_or(CliError::BadInput(format!("'{}' is not a known port!", to_in))));
     let tc = try!(s.schedule(from, to));
+
     for time in tc.Times.iter() {
-        if time.depart_time() > now {
+        if args.flag_all {
             println!("{}\t{}\t{}\t{}",
                      time.depart_time().time(),
                      tc.DepartingTerminalName,
                      tc.ArrivingTerminalName,
                      time.VesselName);
+        } else {
+            if time.depart_time() > now {
+                println!("{}\t{}\t{}\t{}",
+                         time.depart_time().time(),
+                         tc.DepartingTerminalName,
+                         tc.ArrivingTerminalName,
+                         time.VesselName);
+            }
         }
     }
     s.save_cache()

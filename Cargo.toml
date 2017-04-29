@@ -5,7 +5,7 @@ authors = ["Brian McCallister <brianm@skife.org>"]
 build = "build.rs"
 
 [dependencies]
-hyper = "0.9"
+hyper = "0.10"
 rustc-serialize = "0.3"
 chrono = "0.2"
 regex = "0.1"
