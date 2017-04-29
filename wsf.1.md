@@ -13,6 +13,9 @@ FROM and TO are a prefix of the departing terminal and arriving
 terminal, respectively. For example 'wsf sea ba' is equivalent to
 'wsf Seattle "Bainbridge Island"'.
 
+# OPTIONS
+
+**-a**, **--all**   Show all times for today, not just remaining times
 
 # DESCRIPTION
 
