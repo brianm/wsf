@@ -36,6 +36,7 @@ Washing State Ferry Schedules
 
 Usage:
   wsf [options] <from> <to>
+  wsf (-h | --help)
   
   <from> and <to> are a prefix of the departing terminal and arriving
   terminal, respectively. For example 'wsf sea ba' is equivalent to
@@ -58,7 +59,7 @@ fn run() -> Result<()> {
 
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.decode())
-        .unwrap_or_else(|e| e.exit());
+        .unwrap_or_else(|e| e.exit());    
 
     let from_in: &str = &args.arg_from.to_ascii_lowercase();
     let to_in: &str = &args.arg_to.to_ascii_lowercase();
