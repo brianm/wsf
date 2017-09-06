@@ -7,9 +7,7 @@ wsf(1) is a cli tool to display WSF ferry schedules for the rest of the current 
 If you are on OS X the easiest way is through [Homebrew](https://brew.sh/):
 
 ```sh
-$ brew tap brianm/tools
-$ brew update
-$ brew install wsf
+$ brew install brianm/tools/wsf
 ```
 
 # Usage
