@@ -55,7 +55,7 @@ struct Args {
 }
 
 fn run() -> Result<()> {
-    try!(env_logger::init());
+    env_logger::init()?;
 
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.decode())
@@ -67,19 +67,19 @@ fn run() -> Result<()> {
     let mut s = Session::new("afddf683-37c5-4d1a-8486-f7004a16d86d");
 
     let now = Local::now();
-    let mut from: Option<i32> = None;
-    let mut to: Option<i32> = None;
-    for terminal in try!(s.terminals()).iter() {
-        if terminal.Description.to_ascii_lowercase().starts_with(&from_in) {
-            from = Some(terminal.TerminalID);
-        }
-        if terminal.Description.to_ascii_lowercase().starts_with(&to_in) {
-            to = Some(terminal.TerminalID);
-        }
-    }
-    let from = try!(from.ok_or(CliError::BadInput(format!("'{}' is not a known port!", from_in))));
-    let to = try!(to.ok_or(CliError::BadInput(format!("'{}' is not a known port!", to_in))));
-    let tc = try!(s.schedule(from, to));
+    let from = s.terminals()?
+        .iter()
+        .find(|t| t.Description.to_ascii_lowercase().starts_with(&from_in))
+        .ok_or(CliError::BadInput(format!("'{}' is not a known port!", from_in)))?
+        .TerminalID;
+
+    let to = s.terminals()?
+        .iter()
+        .find(|t| t.Description.to_ascii_lowercase().starts_with(&to_in))
+        .ok_or(CliError::BadInput(format!("'{}' is not a known port!", from_in)))?
+        .TerminalID;
+
+    let tc = s.schedule(from, to)?;
 
     for time in tc.Times.iter() {
         if args.flag_all {
@@ -132,7 +132,7 @@ impl Session {
             client: Client::new(),
             cache: Cache::load(&cache_path).unwrap_or(Cache::empty()),
             cacheflushdate: String::new(),
-            cache_path: cache_path,
+            cache_path,
             offline: false,
         };
 
@@ -150,21 +150,21 @@ impl Session {
     fn save_cache(&mut self) -> Result<()> {
         self.cache.cache_flush_date = self.cacheflushdate.clone();
 
-        let mut f = try!(File::create(&self.cache_path));
-        let encoded = try!(json::encode(&self.cache));
-        Ok(try!(f.write_all(encoded.as_bytes())))
+        let mut f = File::create(&self.cache_path)?;
+        let encoded = json::encode(&self.cache)?;
+        Ok(f.write_all(encoded.as_bytes())?)
     }
 
     fn get<T: Decodable>(&self, path: String) -> Result<T> {
         let url = &format!("http://www.wsdot.wa.gov/ferries/api/schedule/rest{}?apiaccesscode={}",
                            path,
                            self.api_key);
-        let mut res = try!(self.client.get(url).send());
+        let mut res = self.client.get(url).send()?;
         assert_eq!(res.status, hyper::Ok);
 
         let mut buf = String::new();
-        try!(res.read_to_string(&mut buf));
-        Ok(try!(json::decode::<T>(&buf)))
+        res.read_to_string(&mut buf)?;
+        Ok(json::decode::<T>(&buf)?)
     }
 
     fn terminals(&mut self) -> Result<Vec<Terminal>> {
@@ -173,7 +173,7 @@ impl Session {
         } else {
             let now = Local::today();
             let path = format!("/terminals/{}-{}-{}", now.year(), now.month(), now.day());
-            let routes: Vec<Terminal> = try!(self.get(path));
+            let routes: Vec<Terminal> = self.get(path)?;
             self.cache.terminals = routes.clone();
             return Ok(routes);
         }
@@ -209,7 +209,7 @@ impl Session {
                            from,
                            to);
 
-        let schedule: Schedule = try!(self.get(path));
+        let schedule: Schedule = self.get(path)?;
 
         self.cache.sailings.insert(cache_key, schedule.TerminalCombos[0].clone());
         Ok(schedule.TerminalCombos[0].clone())
@@ -233,10 +233,10 @@ impl Cache {
     }
 
     fn load(path: &String) -> Result<Cache> {
-        let mut f = try!(File::open(path));
+        let mut f = File::open(path)?;
         let mut s = String::new();
-        try!(f.read_to_string(&mut s));
-        let cache: Cache = try!(json::decode(&s));
+        f.read_to_string(&mut s)?;
+        let cache: Cache = json::decode(&s)?;
         Ok(cache)
     }
 }
@@ -332,6 +332,7 @@ impl From<log::SetLoggerError> for CliError {
         CliError::Log(err)
     }
 }
+
 impl From<hyper::error::Error> for CliError {
     fn from(err: hyper::error::Error) -> CliError {
         CliError::Http(err)

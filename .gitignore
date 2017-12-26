@@ -1,3 +1,5 @@
+.idea
+*.iml
 wsf.1
 .envrc
 target
