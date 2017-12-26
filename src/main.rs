@@ -67,16 +67,14 @@ fn run() -> Result<()> {
     let mut s = Session::new("afddf683-37c5-4d1a-8486-f7004a16d86d");
 
     let now = Local::now();
-    let from = s.terminals()?
-        .iter()
+    let from = s.terminals()?.iter()
         .find(|t| t.Description.to_ascii_lowercase().starts_with(&from_in))
-        .ok_or(CliError::BadInput(format!("'{}' is not a known port!", from_in)))?
+        .ok_or(CliError::BadInput(format!("From port, '{}', is not known!", from_in)))?
         .TerminalID;
 
-    let to = s.terminals()?
-        .iter()
+    let to = s.terminals()?.iter()
         .find(|t| t.Description.to_ascii_lowercase().starts_with(&to_in))
-        .ok_or(CliError::BadInput(format!("'{}' is not a known port!", from_in)))?
+        .ok_or(CliError::BadInput(format!("To port, '{}', is not known !", from_in)))?
         .TerminalID;
 
     let tc = s.schedule(from, to)?;
@@ -105,8 +103,7 @@ fn main() {
     match run() {
         Ok(_) => {}
         Err(e) => {
-            // TODO print to STDERR instead of STDOUT
-            println!("{}", e);
+            eprintln!("{}", e);
             std::process::exit(1);
         }
     }
