@@ -6,7 +6,6 @@ extern crate env_logger;
 extern crate log;
 extern crate docopt;
 
-use std::ascii::AsciiExt;
 use std::io::Read;
 use std::env;
 use std::collections::HashMap;

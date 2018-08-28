@@ -2,6 +2,7 @@
 name = "wsf"
 version = "0.1.7"
 authors = ["Brian McCallister <brianm@skife.org>"]
+license = "Apache-2.0"
 build = "build.rs"
 
 [dependencies]
