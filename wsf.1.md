@@ -1,4 +1,4 @@
-% WSF(1)
+% WSF(1) WSF User Manual
 % Brian McCallister <brianm@skife.org>
 
 # NAME
@@ -7,7 +7,7 @@ wsf - Display Washington State Ferry schedules
 
 # SYNOPSIS
 
-**wsf** _FROM_ _TO_
+**wsf**   _FROM_ _TO_
 
 FROM and TO are a prefix of the departing terminal and arriving
 terminal, respectively. For example 'wsf sea ba' is equivalent to
@@ -15,7 +15,8 @@ terminal, respectively. For example 'wsf sea ba' is equivalent to
 
 # OPTIONS
 
-**-a**, **--all**   Show all times for today, not just remaining times
+-a, ---all
+:   Show all times for today, not just remaining times
 
 # DESCRIPTION
 
