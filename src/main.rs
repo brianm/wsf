@@ -1,30 +1,28 @@
-extern crate hyper;
-extern crate rustc_serialize;
-extern crate chrono;
-extern crate regex;
-extern crate env_logger;
-extern crate log;
-extern crate docopt;
+use hyper;
+use rustc_serialize;
 
-use std::io::Read;
-use std::env;
+use dirs;
+use env_logger;
+use log;
+
 use std::collections::HashMap;
+use std::error::Error;
+use std::fmt;
 use std::fs::File;
+use std::io::Read;
 use std::io::Write;
 use std::path::PathBuf;
-use std::fmt;
-use std::error::Error;
 use std::result;
 
-use chrono::naive::datetime::NaiveDateTime;
-use chrono::offset::local::Local;
-use chrono::offset::fixed::FixedOffset;
 use chrono::datetime::DateTime;
+use chrono::naive::datetime::NaiveDateTime;
+use chrono::offset::fixed::FixedOffset;
+use chrono::offset::local::Local;
 use chrono::Datelike;
 
+use hyper::client::Client;
 use rustc_serialize::json;
 use rustc_serialize::Decodable;
-use hyper::client::Client;
 
 use regex::Regex;
 
@@ -66,32 +64,46 @@ fn run() -> Result<()> {
     let mut s = Session::new("afddf683-37c5-4d1a-8486-f7004a16d86d");
 
     let now = Local::now();
-    let from = s.terminals()?.iter()
+    let from = s
+        .terminals()?
+        .iter()
         .find(|t| t.Description.to_ascii_lowercase().starts_with(&from_in))
-        .ok_or(CliError::BadInput(format!("From port, '{}', is not known!", from_in)))?
+        .ok_or(CliError::BadInput(format!(
+            "From port, '{}', is not known!",
+            from_in
+        )))?
         .TerminalID;
 
-    let to = s.terminals()?.iter()
+    let to = s
+        .terminals()?
+        .iter()
         .find(|t| t.Description.to_ascii_lowercase().starts_with(&to_in))
-        .ok_or(CliError::BadInput(format!("To port, '{}', is not known !", from_in)))?
+        .ok_or(CliError::BadInput(format!(
+            "To port, '{}', is not known !",
+            from_in
+        )))?
         .TerminalID;
 
     let tc = s.schedule(from, to)?;
 
     for time in tc.Times.iter() {
         if args.flag_all {
-            println!("{}\t{}\t{}\t{}",
-                     time.depart_time().time(),
-                     tc.DepartingTerminalName,
-                     tc.ArrivingTerminalName,
-                     time.VesselName);
+            println!(
+                "{}\t{}\t{}\t{}",
+                time.depart_time().time(),
+                tc.DepartingTerminalName,
+                tc.ArrivingTerminalName,
+                time.VesselName
+            );
         } else {
             if time.depart_time() > now {
-                println!("{}\t{}\t{}\t{}",
-                         time.depart_time().time(),
-                         tc.DepartingTerminalName,
-                         tc.ArrivingTerminalName,
-                         time.VesselName);
+                println!(
+                    "{}\t{}\t{}\t{}",
+                    time.depart_time().time(),
+                    tc.DepartingTerminalName,
+                    tc.ArrivingTerminalName,
+                    time.VesselName
+                );
             }
         }
     }
@@ -119,7 +131,7 @@ struct Session {
 
 impl Session {
     fn new(api_key: &str) -> Session {
-        let mut cache_path: PathBuf = env::home_dir().unwrap();
+        let mut cache_path: PathBuf = dirs::home_dir().unwrap();
         cache_path.push(".wsf.cache");
         let cache_path = cache_path.display().to_string();
 
@@ -152,9 +164,10 @@ impl Session {
     }
 
     fn get<T: Decodable>(&self, path: String) -> Result<T> {
-        let url = &format!("http://www.wsdot.wa.gov/ferries/api/schedule/rest{}?apiaccesscode={}",
-                           path,
-                           self.api_key);
+        let url = &format!(
+            "http://www.wsdot.wa.gov/ferries/api/schedule/rest{}?apiaccesscode={}",
+            path, self.api_key
+        );
         let mut res = self.client.get(url).send()?;
         assert_eq!(res.status, hyper::Ok);
 
@@ -182,7 +195,8 @@ impl Session {
         if self.offline || (self.cache.cache_flush_date == self.cacheflushdate) {
             if self.cache.sailings.contains_key(&cache_key) {
                 // cache is up to date and has route!
-                return Ok(self.cache
+                return Ok(self
+                    .cache
                     .sailings
                     .get(&cache_key)
                     .expect("checked for key in cache then not found")
@@ -198,16 +212,20 @@ impl Session {
         }
 
         let now = Local::now();
-        let path = format!("/schedule/{}-{}-{}/{}/{}",
-                           now.year(),
-                           now.month(),
-                           now.day(),
-                           from,
-                           to);
+        let path = format!(
+            "/schedule/{}-{}-{}/{}/{}",
+            now.year(),
+            now.month(),
+            now.day(),
+            from,
+            to
+        );
 
         let schedule: Schedule = self.get(path)?;
 
-        self.cache.sailings.insert(cache_key, schedule.TerminalCombos[0].clone());
+        self.cache
+            .sailings
+            .insert(cache_key, schedule.TerminalCombos[0].clone());
         Ok(schedule.TerminalCombos[0].clone())
     }
 }
@@ -296,7 +314,7 @@ enum CliError {
 }
 
 impl fmt::Display for CliError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             CliError::Log(ref err) => format!("Unable to configure logging: {}", err).fmt(f),
             CliError::Parse(ref err) => format!("Unable to parse WSDOT Data: {}", err).fmt(f),
