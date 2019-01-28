@@ -4,6 +4,7 @@ version = "0.1.7"
 authors = ["Brian McCallister <brianm@skife.org>"]
 license = "Apache-2.0"
 build = "build.rs"
+edition = "2018"
 
 [dependencies]
 hyper = "0.10"
@@ -13,3 +14,4 @@ regex = "0.1"
 log = "0.3"
 env_logger = "0.4"
 docopt = "0.7"
+dirs = "1.0.4"
