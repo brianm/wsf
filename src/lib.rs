@@ -1,5 +1,4 @@
 use dirs;
-use log;
 
 use std::collections::HashMap;
 use std::fs::File;

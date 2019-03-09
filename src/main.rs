@@ -53,10 +53,7 @@ fn run() -> Result<(), wsf::CliError> {
         .terminals()?
         .iter()
         .find(|t| t.Description.to_ascii_lowercase().starts_with(&to_in))
-        .ok_or_else(|| wsf::CliError::BadInput(format!(
-            "To port, '{}', is not known !",
-            from_in
-        )))?
+        .ok_or_else(|| wsf::CliError::BadInput(format!("To port, '{}', is not known !", from_in)))?
         .TerminalID;
 
     let tc = s.schedule(from, to)?;
