@@ -21,7 +21,7 @@ use std::error::Error;
 use std::fmt;
 use std::result;
 
-type Result<T> = result::Result<T, CliError>;
+type Result<T> = result::Result<T, WsfError>;
 
 pub struct Session {
     api_key: String,
@@ -206,7 +206,7 @@ pub struct Schedule {
 }
 
 #[derive(Debug)]
-pub enum CliError {
+pub enum WsfError {
     Log(log::SetLoggerError),
     Parse(rustc_serialize::json::DecoderError),
     SaveCache(rustc_serialize::json::EncoderError),
@@ -215,54 +215,54 @@ pub enum CliError {
     BadInput(String),
 }
 
-impl fmt::Display for CliError {
+impl fmt::Display for WsfError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            CliError::Log(ref err) => format!("Unable to configure logging: {}", err).fmt(f),
-            CliError::Parse(ref err) => format!("Unable to parse WSDOT Data: {}", err).fmt(f),
-            CliError::SaveCache(ref err) => format!("Unable to save cache: {}", err).fmt(f),
-            CliError::Http(ref err) => format!("Unable to communicate with WSDOT: {}", err).fmt(f),
-            CliError::Io(ref err) => format!("Unable to read data: {}", err).fmt(f),
-            CliError::BadInput(ref desc) => format!("Unable to understand input: {}", desc).fmt(f),
+            WsfError::Log(ref err) => format!("Unable to configure logging: {}", err).fmt(f),
+            WsfError::Parse(ref err) => format!("Unable to parse WSDOT Data: {}", err).fmt(f),
+            WsfError::SaveCache(ref err) => format!("Unable to save cache: {}", err).fmt(f),
+            WsfError::Http(ref err) => format!("Unable to communicate with WSDOT: {}", err).fmt(f),
+            WsfError::Io(ref err) => format!("Unable to read data: {}", err).fmt(f),
+            WsfError::BadInput(ref desc) => format!("Unable to understand input: {}", desc).fmt(f),
         }
     }
 }
 
-impl Error for CliError {
+impl Error for WsfError {
     fn description(&self) -> &str {
         match *self {
-            CliError::BadInput(ref err) => err,
+            WsfError::BadInput(ref err) => err,
             _ => self.description(),
         }
     }
 }
 
-impl From<rustc_serialize::json::EncoderError> for CliError {
-    fn from(err: rustc_serialize::json::EncoderError) -> CliError {
-        CliError::SaveCache(err)
+impl From<rustc_serialize::json::EncoderError> for WsfError {
+    fn from(err: rustc_serialize::json::EncoderError) -> WsfError {
+        WsfError::SaveCache(err)
     }
 }
 
-impl From<log::SetLoggerError> for CliError {
-    fn from(err: log::SetLoggerError) -> CliError {
-        CliError::Log(err)
+impl From<log::SetLoggerError> for WsfError {
+    fn from(err: log::SetLoggerError) -> WsfError {
+        WsfError::Log(err)
     }
 }
 
-impl From<hyper::error::Error> for CliError {
-    fn from(err: hyper::error::Error) -> CliError {
-        CliError::Http(err)
+impl From<hyper::error::Error> for WsfError {
+    fn from(err: hyper::error::Error) -> WsfError {
+        WsfError::Http(err)
     }
 }
 
-impl From<std::io::Error> for CliError {
-    fn from(err: std::io::Error) -> CliError {
-        CliError::Io(err)
+impl From<std::io::Error> for WsfError {
+    fn from(err: std::io::Error) -> WsfError {
+        WsfError::Io(err)
     }
 }
 
-impl From<rustc_serialize::json::DecoderError> for CliError {
-    fn from(err: rustc_serialize::json::DecoderError) -> CliError {
-        CliError::Parse(err)
+impl From<rustc_serialize::json::DecoderError> for WsfError {
+    fn from(err: rustc_serialize::json::DecoderError) -> WsfError {
+        WsfError::Parse(err)
     }
 }

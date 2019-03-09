@@ -29,7 +29,7 @@ struct Args {
     flag_all: bool,
 }
 
-fn run() -> Result<(), wsf::CliError> {
+fn run() -> Result<(), wsf::WsfError> {
     env_logger::init();
 
     let args: Args = Docopt::new(USAGE)
@@ -46,14 +46,14 @@ fn run() -> Result<(), wsf::CliError> {
         .terminals()?
         .iter()
         .find(|t| t.Description.to_ascii_lowercase().starts_with(&from_in))
-        .ok_or_else(|| wsf::CliError::BadInput(format!("From port, '{}', is not known!", from_in)))?
+        .ok_or_else(|| wsf::WsfError::BadInput(format!("From port, '{}', is not known!", from_in)))?
         .TerminalID;
 
     let to = s
         .terminals()?
         .iter()
         .find(|t| t.Description.to_ascii_lowercase().starts_with(&to_in))
-        .ok_or_else(|| wsf::CliError::BadInput(format!("To port, '{}', is not known !", from_in)))?
+        .ok_or_else(|| wsf::WsfError::BadInput(format!("To port, '{}', is not known !", from_in)))?
         .TerminalID;
 
     let tc = s.schedule(from, to)?;
