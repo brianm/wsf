@@ -1,5 +1,3 @@
-// #[macro_use] extern crate failure_derive;
-
 use dirs;
 
 use std::collections::HashMap;
