@@ -209,19 +209,19 @@ pub struct Schedule {
 #[derive(Debug, Fail)]
 pub enum WsfError {
     #[fail(display = "Unable to configure logging: {}", _0)]
-    Log(log::SetLoggerError),
+    Log(#[cause] log::SetLoggerError),
 
     #[fail(display = "Unable to parse WSDOT Data: {}", _0)]
-    Parse(rustc_serialize::json::DecoderError),
+    Parse(#[cause] rustc_serialize::json::DecoderError),
 
     #[fail(display = "Unable to save cache: {}", _0)]
-    SaveCache(rustc_serialize::json::EncoderError),
+    SaveCache(#[cause] rustc_serialize::json::EncoderError),
 
     #[fail(display = "Unable to communicate with WSDOT: {}", _0)]
-    Http(hyper::error::Error),
+    Http(#[cause] hyper::error::Error),
 
     #[fail(display = "Unable to read data: {}", _0)]
-    Io(std::io::Error),
+    Io(#[cause] std::io::Error),
 
     #[fail(display = "Unable to understand input: {}", _0)]
     BadInput(String),
