@@ -1,3 +1,5 @@
+// #[macro_use] extern crate failure_derive;
+
 use dirs;
 
 use std::collections::HashMap;
@@ -16,9 +18,8 @@ use hyper::client::Client;
 use rustc_serialize::json;
 use rustc_serialize::Decodable;
 
+use failure::Fail;
 use regex::Regex;
-use std::error::Error;
-use std::fmt;
 use std::result;
 
 type Result<T> = result::Result<T, WsfError>;
@@ -205,36 +206,25 @@ pub struct Schedule {
     pub TerminalCombos: Vec<TerminalCombo>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Fail)]
 pub enum WsfError {
+    #[fail(display = "Unable to configure logging: {}", _0)]
     Log(log::SetLoggerError),
+
+    #[fail(display = "Unable to parse WSDOT Data: {}", _0)]
     Parse(rustc_serialize::json::DecoderError),
+
+    #[fail(display = "Unable to save cache: {}", _0)]
     SaveCache(rustc_serialize::json::EncoderError),
+
+    #[fail(display = "Unable to communicate with WSDOT: {}", _0)]
     Http(hyper::error::Error),
+
+    #[fail(display = "Unable to read data: {}", _0)]
     Io(std::io::Error),
+
+    #[fail(display = "Unable to understand input: {}", _0)]
     BadInput(String),
-}
-
-impl fmt::Display for WsfError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            WsfError::Log(ref err) => format!("Unable to configure logging: {}", err).fmt(f),
-            WsfError::Parse(ref err) => format!("Unable to parse WSDOT Data: {}", err).fmt(f),
-            WsfError::SaveCache(ref err) => format!("Unable to save cache: {}", err).fmt(f),
-            WsfError::Http(ref err) => format!("Unable to communicate with WSDOT: {}", err).fmt(f),
-            WsfError::Io(ref err) => format!("Unable to read data: {}", err).fmt(f),
-            WsfError::BadInput(ref desc) => format!("Unable to understand input: {}", desc).fmt(f),
-        }
-    }
-}
-
-impl Error for WsfError {
-    fn description(&self) -> &str {
-        match *self {
-            WsfError::BadInput(ref err) => err,
-            _ => self.description(),
-        }
-    }
 }
 
 impl From<rustc_serialize::json::EncoderError> for WsfError {
