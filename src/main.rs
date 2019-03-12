@@ -31,7 +31,9 @@ struct Args {
 }
 
 fn run() -> Result<(), Error> {
-    env_logger::init();
+    let env = env_logger::Env::default().filter_or("WSF_LOG", "info");
+
+    env_logger::init_from_env(env);
 
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.deserialize())
