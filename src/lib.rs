@@ -79,6 +79,16 @@ impl Session {
         Ok(json::decode::<T>(&buf)?)
     }
 
+    pub fn find_terminal(&mut self, term: &str) -> Result<Terminal> {
+        let r = self
+            .terminals()?
+            .iter()
+            .map(|t| t.clone())
+            .find(|t| t.Description.to_ascii_lowercase().starts_with(&term))
+            .ok_or_else(|| WsfError::TerminalNotFound(term.to_string()));
+        Ok(r?)
+    }
+
     pub fn terminals(&mut self) -> Result<Vec<Terminal>> {
         if self.offline || (self.cache.cache_flush_date == self.cacheflushdate) {
             Ok(self.cache.terminals.clone())
@@ -221,8 +231,8 @@ pub enum WsfError {
     #[fail(display = "Unable to read data: {}", _0)]
     Io(#[cause] std::io::Error),
 
-    #[fail(display = "Unable to understand input: {}", _0)]
-    BadInput(String),
+    #[fail(display = "Terminal not found: {}", _0)]
+    TerminalNotFound(String),
 }
 
 impl From<rustc_serialize::json::EncoderError> for WsfError {

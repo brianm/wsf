@@ -4,6 +4,7 @@ extern crate serde_derive;
 use chrono::offset::local::Local;
 use docopt::Docopt;
 use env_logger;
+use failure::Error;
 use wsf;
 
 static USAGE: &'static str = "
@@ -29,7 +30,7 @@ struct Args {
     flag_all: bool,
 }
 
-fn run() -> Result<(), wsf::WsfError> {
+fn run() -> Result<(), Error> {
     env_logger::init();
 
     let args: Args = Docopt::new(USAGE)
@@ -41,23 +42,12 @@ fn run() -> Result<(), wsf::WsfError> {
 
     let mut s = wsf::Session::new("afddf683-37c5-4d1a-8486-f7004a16d86d");
 
-    let now = Local::now();
-    let from = s
-        .terminals()?
-        .iter()
-        .find(|t| t.Description.to_ascii_lowercase().starts_with(&from_in))
-        .ok_or_else(|| wsf::WsfError::BadInput(format!("From port, '{}', is not known!", from_in)))?
-        .TerminalID;
-
-    let to = s
-        .terminals()?
-        .iter()
-        .find(|t| t.Description.to_ascii_lowercase().starts_with(&to_in))
-        .ok_or_else(|| wsf::WsfError::BadInput(format!("To port, '{}', is not known !", from_in)))?
-        .TerminalID;
+    let from = s.find_terminal(&from_in)?.TerminalID;
+    let to = s.find_terminal(&to_in)?.TerminalID;
 
     let tc = s.schedule(from, to)?;
 
+    let now = Local::now();
     for time in tc.Times.iter() {
         if args.flag_all {
             println!(
@@ -77,7 +67,7 @@ fn run() -> Result<(), wsf::WsfError> {
             );
         }
     }
-    s.save_cache()
+    Ok(s.save_cache()?)
 }
 
 fn main() {
