@@ -1,6 +1,6 @@
 [package]
 name = "wsf"
-version = "0.1.9"
+version = "1.1.9"
 authors = ["Brian McCallister <brianm@skife.org>"]
 license = "Apache-2.0"
 build = "build.rs"
