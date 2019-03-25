@@ -5,6 +5,7 @@ use chrono::offset::local::Local;
 use docopt::Docopt;
 use env_logger;
 use failure::Error;
+use human_panic;
 use wsf;
 
 static USAGE: &'static str = "
@@ -51,7 +52,7 @@ fn run() -> Result<(), Error> {
 
     let now = Local::now();
     for time in tc.Times.iter() {
-        if args.flag_all {
+        if args.flag_all || time.depart_time() > now {
             println!(
                 "{}\t{}\t{}\t{}",
                 time.depart_time().time(),
@@ -59,20 +60,15 @@ fn run() -> Result<(), Error> {
                 tc.ArrivingTerminalName,
                 time.VesselName
             );
-        } else if time.depart_time() > now {
-            println!(
-                "{}\t{}\t{}\t{}",
-                time.depart_time().time(),
-                tc.DepartingTerminalName,
-                tc.ArrivingTerminalName,
-                time.VesselName
-            );
-        }
+        };
     }
-    Ok(s.save_cache()?)
+    s.save_cache()?;
+    Ok(())
 }
 
 fn main() {
+    human_panic::setup_panic!();
+
     match run() {
         Ok(_) => {}
         Err(e) => {

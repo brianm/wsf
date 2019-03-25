@@ -5,6 +5,7 @@ authors = ["Brian McCallister <brianm@skife.org>"]
 license = "Apache-2.0"
 build = "build.rs"
 edition = "2018"
+documentation = "https://github.com/brianm/wsf"
 
 [dependencies]
 hyper = "0.10"
@@ -19,6 +20,7 @@ serde = "1.0.89"
 serde_derive = "1.0.89"
 failure_derive = "0.1.5"
 failure = "0.1.5"
+human-panic = "1.0.1"
 
 [dev-dependencies]
 mockito = "0.16.0"

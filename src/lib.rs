@@ -83,7 +83,7 @@ impl Session {
         let r = self
             .terminals()?
             .iter()
-            .map(|t| t.clone())
+            .cloned()
             .find(|t| t.Description.to_ascii_lowercase().starts_with(&term))
             .ok_or_else(|| WsfError::TerminalNotFound(term.to_string()));
         Ok(r?)
