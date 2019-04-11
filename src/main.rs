@@ -32,10 +32,6 @@ struct Args {
 }
 
 fn run() -> Result<(), Error> {
-    let env = env_logger::Env::default().filter_or("WSF_LOG", "info");
-
-    env_logger::init_from_env(env);
-
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
@@ -68,6 +64,9 @@ fn run() -> Result<(), Error> {
 
 fn main() {
     human_panic::setup_panic!();
+
+    let env = env_logger::Env::default().filter_or("WSF_LOG", "info");
+    env_logger::init_from_env(env);
 
     match run() {
         Ok(_) => {}
