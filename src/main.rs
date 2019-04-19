@@ -7,6 +7,7 @@ use env_logger;
 use failure::Error;
 use human_panic;
 use wsf;
+use exitfailure;
 
 static USAGE: &'static str = "
 Washing State Ferry Schedules
@@ -62,17 +63,11 @@ fn run() -> Result<(), Error> {
     Ok(())
 }
 
-fn main() {
+fn main() -> Result<(), exitfailure::ExitFailure> {
     human_panic::setup_panic!();
 
     let env = env_logger::Env::default().filter_or("WSF_LOG", "info");
     env_logger::init_from_env(env);
 
-    match run() {
-        Ok(_) => {}
-        Err(e) => {
-            eprintln!("{}", e);
-            std::process::exit(1);
-        }
-    }
+    Ok(run()?)
 }

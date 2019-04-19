@@ -21,6 +21,7 @@ serde_derive = "1.0.89"
 failure_derive = "0.1.5"
 failure = "0.1.5"
 human-panic = "1.0.1"
+exitfailure = "0.5.1"
 
 [dev-dependencies]
 mockito = "0.16.0"
