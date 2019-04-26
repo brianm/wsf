@@ -49,10 +49,10 @@ fn run() -> Result<(), Error> {
 
     let now = Local::now();
     for time in tc.Times.iter() {
-        if args.flag_all || time.depart_time() > now {
+        if args.flag_all || time.depart_time()? > now {
             println!(
                 "{}\t{}\t{}\t{}",
-                time.depart_time().time(),
+                time.depart_time()?.time(),
                 tc.DepartingTerminalName,
                 tc.ArrivingTerminalName,
                 time.VesselName

@@ -20,6 +20,7 @@ use reqwest;
 use failure::Fail;
 use regex::Regex;
 use std::result;
+#[macro_use] extern crate lazy_static;
 
 type Result<T> = result::Result<T, failure::Error>;
 
@@ -182,18 +183,20 @@ pub struct SailingTime {
 
 impl SailingTime {
     // parse date strings of form "/Date(1436318400000-0700)/"
-    pub fn depart_time(&self) -> DateTime<Local> {
-        let re = Regex::new(r"^/Date\((\d{10})000-(\d{2})(\d{2})\)/$").unwrap();
-        let caps = re.captures(&self.DepartingTime).unwrap();
+    pub fn depart_time(&self) -> Result<DateTime<Local>> {
+        lazy_static! {
+            static ref RE: regex::Regex = Regex::new(r"^/Date\((\d{10})000-(\d{2})(\d{2})\)/$").unwrap();
+        }
+        let caps = RE.captures(&self.DepartingTime).unwrap();
 
-        let epoch: i64 = caps.at(1).unwrap().parse().unwrap();
-        let tz_hours: i32 = caps.at(2).unwrap().parse().unwrap();
-        let tz_minutes: i32 = caps.at(3).unwrap().parse().unwrap();
+        let epoch: i64 = caps.get(1).unwrap().as_str().parse()?;
+        let tz_hours: i32 = caps.get(2).unwrap().as_str().parse()?;
+        let tz_minutes: i32 = caps.get(3).unwrap().as_str().parse()?;
 
         let nd = NaiveDateTime::from_timestamp(epoch, 0);
         let tz = FixedOffset::west((tz_hours * 3600) + (tz_minutes * 60));
         let fotz: DateTime<FixedOffset> = DateTime::from_utc(nd, tz);
-        fotz.with_timezone(&Local)
+        Ok(fotz.with_timezone(&Local))
     }
 }
 
