@@ -20,7 +20,8 @@ use reqwest;
 use failure::Fail;
 use regex::Regex;
 use std::result;
-#[macro_use] extern crate lazy_static;
+#[macro_use]
+extern crate lazy_static;
 
 type Result<T> = result::Result<T, failure::Error>;
 
@@ -185,7 +186,8 @@ impl SailingTime {
     // parse date strings of form "/Date(1436318400000-0700)/"
     pub fn depart_time(&self) -> Result<DateTime<Local>> {
         lazy_static! {
-            static ref RE: regex::Regex = Regex::new(r"^/Date\((\d{10})000-(\d{2})(\d{2})\)/$").unwrap();
+            static ref RE: regex::Regex =
+                Regex::new(r"^/Date\((\d{10})000-(\d{2})(\d{2})\)/$").unwrap();
         }
         let caps = RE.captures(&self.DepartingTime).unwrap();
 
@@ -219,4 +221,3 @@ pub enum WsfError {
     #[fail(display = "Terminal not found: {}", _0)]
     TerminalNotFound(String),
 }
-
