@@ -4,10 +4,10 @@ extern crate serde_derive;
 use chrono::offset::local::Local;
 use docopt::Docopt;
 use env_logger;
+use exitfailure;
 use failure::Error;
 use human_panic;
 use wsf;
-use exitfailure;
 
 static USAGE: &'static str = "
 Washing State Ferry Schedules

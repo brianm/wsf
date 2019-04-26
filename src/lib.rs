@@ -11,20 +11,20 @@ use chrono::naive::datetime::NaiveDateTime;
 use chrono::offset::fixed::FixedOffset;
 use chrono::offset::local::Local;
 use chrono::Datelike;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use serde_json;
 
-use hyper::client::Client;
-use rustc_serialize::json;
-use rustc_serialize::Decodable;
+use reqwest;
 
 use failure::Fail;
 use regex::Regex;
 use std::result;
 
-type Result<T> = result::Result<T, WsfError>;
+type Result<T> = result::Result<T, failure::Error>;
 
 pub struct Session {
     api_key: String,
-    client: Client,
     cache: Cache,
     cacheflushdate: String,
     cache_path: String,
@@ -39,7 +39,6 @@ impl Session {
 
         let mut s = Session {
             api_key: api_key.to_string(),
-            client: Client::new(),
             cache: Cache::load(&cache_path).unwrap_or_else(|_| Cache::empty()),
             cacheflushdate: String::new(),
             cache_path,
@@ -61,22 +60,20 @@ impl Session {
         self.cache.cache_flush_date = self.cacheflushdate.clone();
 
         let mut f = File::create(&self.cache_path)?;
-        let encoded = json::encode(&self.cache)?;
+        let encoded = serde_json::to_string(&self.cache)?;
         f.write_all(encoded.as_bytes())?;
         Ok(())
     }
 
-    fn get<T: Decodable>(&self, path: String) -> Result<T> {
+    fn get<T: DeserializeOwned>(&self, path: String) -> Result<T> {
         let url = &format!(
             "http://www.wsdot.wa.gov/ferries/api/schedule/rest{}?apiaccesscode={}",
             path, self.api_key
         );
-        let mut res = self.client.get(url).send()?;
-        assert_eq!(res.status, hyper::Ok);
+        let mut response = reqwest::get(url)?;
 
-        let mut buf = String::new();
-        res.read_to_string(&mut buf)?;
-        Ok(json::decode::<T>(&buf)?)
+        let it: T = response.json()?;
+        Ok(it)
     }
 
     pub fn find_terminal(&mut self, term: &str) -> Result<Terminal> {
@@ -143,7 +140,7 @@ impl Session {
     }
 }
 
-#[derive(RustcDecodable, RustcEncodable, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Cache {
     terminals: Vec<Terminal>,
     sailings: HashMap<String, TerminalCombo>,
@@ -163,20 +160,20 @@ impl Cache {
         let mut f = File::open(path)?;
         let mut s = String::new();
         f.read_to_string(&mut s)?;
-        let cache: Cache = json::decode(&s)?;
+        let cache: Cache = serde_json::from_str(&s)?;
         Ok(cache)
     }
 }
 
 #[allow(non_snake_case)]
-#[derive(RustcDecodable, RustcEncodable, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Terminal {
     pub TerminalID: i32,
     pub Description: String,
 }
 
 #[allow(non_snake_case)]
-#[derive(RustcDecodable, RustcEncodable, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SailingTime {
     pub DepartingTime: String,
     pub ArrivingTime: Option<String>,
@@ -201,7 +198,7 @@ impl SailingTime {
 }
 
 #[allow(non_snake_case)]
-#[derive(RustcDecodable, RustcEncodable, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TerminalCombo {
     pub Times: Vec<SailingTime>,
     pub DepartingTerminalName: String,
@@ -209,58 +206,14 @@ pub struct TerminalCombo {
 }
 
 #[allow(non_snake_case)]
-#[derive(RustcDecodable, RustcEncodable, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Schedule {
     pub TerminalCombos: Vec<TerminalCombo>,
 }
 
 #[derive(Debug, Fail)]
 pub enum WsfError {
-    #[fail(display = "Unable to configure logging: {}", _0)]
-    Log(#[cause] log::SetLoggerError),
-
-    #[fail(display = "Unable to parse WSDOT Data: {}", _0)]
-    Parse(#[cause] rustc_serialize::json::DecoderError),
-
-    #[fail(display = "Unable to save cache: {}", _0)]
-    SaveCache(#[cause] rustc_serialize::json::EncoderError),
-
-    #[fail(display = "Unable to communicate with WSDOT: {}", _0)]
-    Http(#[cause] hyper::error::Error),
-
-    #[fail(display = "Unable to read data: {}", _0)]
-    Io(#[cause] std::io::Error),
-
     #[fail(display = "Terminal not found: {}", _0)]
     TerminalNotFound(String),
 }
 
-impl From<rustc_serialize::json::EncoderError> for WsfError {
-    fn from(err: rustc_serialize::json::EncoderError) -> WsfError {
-        WsfError::SaveCache(err)
-    }
-}
-
-impl From<log::SetLoggerError> for WsfError {
-    fn from(err: log::SetLoggerError) -> WsfError {
-        WsfError::Log(err)
-    }
-}
-
-impl From<hyper::error::Error> for WsfError {
-    fn from(err: hyper::error::Error) -> WsfError {
-        WsfError::Http(err)
-    }
-}
-
-impl From<std::io::Error> for WsfError {
-    fn from(err: std::io::Error) -> WsfError {
-        WsfError::Io(err)
-    }
-}
-
-impl From<rustc_serialize::json::DecoderError> for WsfError {
-    fn from(err: rustc_serialize::json::DecoderError) -> WsfError {
-        WsfError::Parse(err)
-    }
-}
