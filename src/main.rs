@@ -21,7 +21,7 @@ Usage:
   'wsf Seattle \"Bainbridge Island\"'.
 
 Options:
-  -a --all      Show all times for today, not just remaining
+  -a --all      Show all times for today, not just remaining ones
   -h --help     Show this screen.
 ";
 
