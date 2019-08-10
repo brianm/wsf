@@ -27,3 +27,7 @@ serde_json = "1.0"
 [dev-dependencies]
 mockito = "0.16"
 pretty_assertions = "0.6"
+
+[profile.release]
+lto = true # link time optimization - roughly halves the size of the exec
+codegen-units = 1 # this removes a few hundred bytes from the final exec size
