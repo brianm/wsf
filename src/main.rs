@@ -4,10 +4,9 @@ extern crate serde_derive;
 use chrono::offset::local::Local;
 use docopt::Docopt;
 use env_logger;
-use exitfailure;
-use failure::Error;
 use human_panic;
 use wsf;
+use anyhow::Result;
 
 static USAGE: &'static str = "
 Washing State Ferry Schedules
@@ -32,7 +31,7 @@ struct Args {
     flag_all: bool,
 }
 
-fn run() -> Result<(), Error> {
+fn run() -> Result<()> {
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
@@ -63,7 +62,7 @@ fn run() -> Result<(), Error> {
     Ok(())
 }
 
-fn main() -> Result<(), exitfailure::ExitFailure> {
+fn main() -> Result<()> {
     human_panic::setup_panic!();
 
     let env = env_logger::Env::default().filter_or("WSF_LOG", "info");

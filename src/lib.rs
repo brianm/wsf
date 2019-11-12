@@ -17,13 +17,11 @@ use serde_json;
 
 use reqwest;
 
-use failure::Fail;
+use anyhow::Result;
 use regex::Regex;
-use std::result;
 #[macro_use]
 extern crate lazy_static;
-
-type Result<T> = result::Result<T, failure::Error>;
+use thiserror::Error;
 
 pub struct Session {
     api_key: String,
@@ -216,8 +214,8 @@ pub struct Schedule {
     pub TerminalCombos: Vec<TerminalCombo>,
 }
 
-#[derive(Debug, Fail)]
+#[derive(Debug, Error)]
 pub enum WsfError {
-    #[fail(display = "Terminal not found: {}", _0)]
+    #[error("Terminal not found: {0}")]
     TerminalNotFound(String),
 }
