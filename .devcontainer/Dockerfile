@@ -26,8 +26,8 @@ RUN apt-get update \
     # Install lldb, vadimcn.vscode-lldb VSCode extension dependencies
     && apt-get install -y lldb python3-minimal libpython3.7 \
     #
-    # Install postgresql
-    && apt-get install -y postgresql \
+    # Install pandoc
+    && apt-get install -y pandoc \
     #
     # Install Rust components
     && rustup update 2>&1 \
