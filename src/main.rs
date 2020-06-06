@@ -31,7 +31,7 @@ struct Args {
     flag_all: bool,
 }
 
-fn run() -> Result<()> {
+async fn run() -> Result<()> {
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
@@ -39,12 +39,12 @@ fn run() -> Result<()> {
     let from_in: &str = &args.arg_from.to_ascii_lowercase();
     let to_in: &str = &args.arg_to.to_ascii_lowercase();
 
-    let mut s = wsf::Session::new("afddf683-37c5-4d1a-8486-f7004a16d86d");
+    let mut s = wsf::Session::new("afddf683-37c5-4d1a-8486-f7004a16d86d").await;
 
-    let from = s.find_terminal(&from_in)?.TerminalID;
-    let to = s.find_terminal(&to_in)?.TerminalID;
+    let from = s.find_terminal(&from_in).await?.TerminalID;
+    let to = s.find_terminal(&to_in).await?.TerminalID;
 
-    let tc = s.schedule(from, to)?;
+    let tc = s.schedule(from, to).await?;
 
     let now = Local::now();
     for time in tc.Times.iter() {
@@ -62,11 +62,12 @@ fn run() -> Result<()> {
     Ok(())
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     human_panic::setup_panic!();
 
     let env = env_logger::Env::default().filter_or("WSF_LOG", "info");
     env_logger::init_from_env(env);
 
-    Ok(run()?)
+    Ok(run().await?)
 }

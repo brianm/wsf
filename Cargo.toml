@@ -9,14 +9,15 @@ documentation = "https://github.com/brianm/wsf"
 
 [dependencies]
 chrono = "0.4"
-dirs = "1"
+dirs = "2"
 docopt = "1"
-env_logger = "0.6"
+env_logger = "0.7"
 human-panic = "1"
 lazy_static = "1"
 log = "0.4"
 regex = "1"
-reqwest = "0.9"
+reqwest = { version = "0.10", features = ["json"] }
+tokio = { version = "0.2", features = ["full"] }
 serde = "1"
 serde_derive = "1"
 serde_json = "1"

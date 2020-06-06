@@ -29,7 +29,7 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn new(api_key: &str) -> Session {
+    pub async fn new(api_key: &str) -> Session {
         let mut cache_path: PathBuf = dirs::home_dir().unwrap();
         cache_path.push(".wsf.cache");
         let cache_path = cache_path.display().to_string();
@@ -43,7 +43,7 @@ impl Session {
         };
 
         // TODO this is kind of gross, cfd as optional to indicate offline, maybe?
-        s.offline = match s.get::<String>("/cacheflushdate".to_owned()) {
+        s.offline = match s.get::<String>("/cacheflushdate".to_owned()).await {
             Ok(cfd) => {
                 s.cacheflushdate = cfd;
                 false
@@ -62,20 +62,20 @@ impl Session {
         Ok(())
     }
 
-    fn get<T: DeserializeOwned>(&self, path: String) -> Result<T> {
+    async fn get<T: DeserializeOwned>(&self, path: String) -> Result<T> {
         let url = &format!(
             "http://www.wsdot.wa.gov/ferries/api/schedule/rest{}?apiaccesscode={}",
             path, self.api_key
         );
-        let mut response = reqwest::get(url)?;
-
-        let it: T = response.json()?;
+        let it = reqwest::Client::new().get(url).send().await?.json().await?;
+        //let mut it = reqwest::get(url).await?.json().await?;
         Ok(it)
     }
 
-    pub fn find_terminal(&mut self, term: &str) -> Result<Terminal> {
+    pub async fn find_terminal(&mut self, term: &str) -> Result<Terminal> {
         let r = self
-            .terminals()?
+            .terminals()
+            .await?
             .iter()
             .cloned()
             .find(|t| t.Description.to_ascii_lowercase().starts_with(&term))
@@ -83,19 +83,19 @@ impl Session {
         Ok(r?)
     }
 
-    pub fn terminals(&mut self) -> Result<Vec<Terminal>> {
+    pub async fn terminals(&mut self) -> Result<Vec<Terminal>> {
         if self.offline || (self.cache.cache_flush_date == self.cacheflushdate) {
             Ok(self.cache.terminals.clone())
         } else {
             let now = Local::today();
             let path = format!("/terminals/{}-{}-{}", now.year(), now.month(), now.day());
-            let routes: Vec<Terminal> = self.get(path)?;
+            let routes: Vec<Terminal> = self.get(path).await?;
             self.cache.terminals = routes.clone();
             Ok(routes)
         }
     }
 
-    pub fn schedule(&mut self, from: i32, to: i32) -> Result<TerminalCombo> {
+    pub async fn schedule(&mut self, from: i32, to: i32) -> Result<TerminalCombo> {
         let mut cache_is_stale = true;
         let cache_key = format!("{} {}", from, to);
 
@@ -128,7 +128,7 @@ impl Session {
             to
         );
 
-        let schedule: Schedule = self.get(path)?;
+        let schedule: Schedule = self.get(path).await?;
 
         self.cache
             .sailings
