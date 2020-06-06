@@ -1,12 +1,12 @@
 #[macro_use]
 extern crate serde_derive;
 
-use chrono::offset::local::Local;
+use anyhow::Result;
+use chrono::prelude::*;
 use docopt::Docopt;
 use env_logger;
 use human_panic;
 use wsf;
-use anyhow::Result;
 
 static USAGE: &'static str = "
 Washing State Ferry Schedules

@@ -6,11 +6,8 @@ use std::io::Read;
 use std::io::Write;
 use std::path::PathBuf;
 
-use chrono::datetime::DateTime;
-use chrono::naive::datetime::NaiveDateTime;
-use chrono::offset::fixed::FixedOffset;
-use chrono::offset::local::Local;
-use chrono::Datelike;
+use chrono::prelude::*;
+
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json;
