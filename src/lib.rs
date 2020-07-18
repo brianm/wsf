@@ -1,5 +1,3 @@
-use dirs;
-
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
@@ -10,9 +8,6 @@ use chrono::prelude::*;
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use serde_json;
-
-use reqwest;
 
 use anyhow::Result;
 use regex::Regex;

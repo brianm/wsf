@@ -4,11 +4,8 @@ extern crate serde_derive;
 use anyhow::Result;
 use chrono::prelude::*;
 use docopt::Docopt;
-use env_logger;
-use human_panic;
-use wsf;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Washing State Ferry Schedules
 
 Usage:
