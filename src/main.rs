@@ -6,7 +6,7 @@ use chrono::prelude::*;
 use docopt::Docopt;
 
 static USAGE: &str = "
-Washing State Ferry Schedules
+Washington State Ferry Schedules
 
 Usage:
   wsf [options] <from> <to>
