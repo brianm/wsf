@@ -6,3 +6,4 @@ build:
 .PHONY: man
 man:
 	pandoc wsf.1.md -s -t man -o wsf.1
+
