@@ -82,7 +82,7 @@ impl Session {
         if self.offline || (self.cache.cache_flush_date == self.cacheflushdate) {
             Ok(self.cache.terminals.clone())
         } else {
-            let now = Local::today();
+            let now = Local::now();
             let path = format!("/terminals/{}-{}-{}", now.year(), now.month(), now.day());
             let routes: Vec<Terminal> = self.get(path).await?;
             self.cache.terminals = routes.clone();
@@ -185,8 +185,8 @@ impl SailingTime {
         let tz_hours: i32 = caps.get(2).unwrap().as_str().parse()?;
         let tz_minutes: i32 = caps.get(3).unwrap().as_str().parse()?;
 
-        let nd = NaiveDateTime::from_timestamp(epoch, 0);
-        let tz = FixedOffset::west((tz_hours * 3600) + (tz_minutes * 60));
+        let nd = NaiveDateTime::from_timestamp_opt(epoch, 0).unwrap();
+        let tz = FixedOffset::west_opt((tz_hours * 3600) + (tz_minutes * 60)).unwrap();
         let fotz: DateTime<FixedOffset> = DateTime::from_utc(nd, tz);
         Ok(fotz.with_timezone(&Local))
     }
