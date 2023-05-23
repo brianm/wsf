@@ -24,7 +24,7 @@ anyhow = "1.0.57"
 thiserror = "1.0.30"
 
 [dev-dependencies]
-mockito = "0.31.0"
+mockito = "1.0.2"
 pretty_assertions = "1.2.1"
 
 [profile.release]
