@@ -13,3 +13,7 @@ $ brew install brianm/tools/wsf
 # Usage
 
 See [man page](wsf.1.md)
+
+# TODO
+
+* Add eta for next sailings via [vessels api](https://www.wsdot.wa.gov/ferries/api/vessels/documentation/rest.html)
