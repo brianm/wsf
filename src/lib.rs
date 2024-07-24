@@ -49,8 +49,7 @@ impl Session {
     }
 
     pub fn save_cache(&mut self) -> Result<()> {
-        self.cache.cache_flush_date = self.cacheflushdate.clone();
-
+        self.cache.cache_flush_date.clone_from(&self.cacheflushdate);
         let mut f = File::create(&self.cache_path)?;
         let encoded = serde_json::to_string(&self.cache)?;
         f.write_all(encoded.as_bytes())?;
@@ -72,8 +71,8 @@ impl Session {
             .terminals()
             .await?
             .iter()
+            .find(|&t| t.Description.to_ascii_lowercase().starts_with(term))
             .cloned()
-            .find(|t| t.Description.to_ascii_lowercase().starts_with(&term))
             .ok_or_else(|| WsfError::TerminalNotFound(term.to_string()));
         Ok(r?)
     }
@@ -85,7 +84,7 @@ impl Session {
             let now = Local::now();
             let path = format!("/terminals/{}-{}-{}", now.year(), now.month(), now.day());
             let routes: Vec<Terminal> = self.get(path).await?;
-            self.cache.terminals = routes.clone();
+            self.cache.terminals.clone_from(&routes);
             Ok(routes)
         }
     }
@@ -185,9 +184,9 @@ impl SailingTime {
         let tz_hours: i32 = caps.get(2).unwrap().as_str().parse()?;
         let tz_minutes: i32 = caps.get(3).unwrap().as_str().parse()?;
 
-        let nd = NaiveDateTime::from_timestamp_opt(epoch, 0).unwrap();
+        let nd = DateTime::from_timestamp(epoch, 0).unwrap();
         let tz = FixedOffset::west_opt((tz_hours * 3600) + (tz_minutes * 60)).unwrap();
-        let fotz: DateTime<FixedOffset> = DateTime::from_utc(nd, tz);
+        let fotz: DateTime<FixedOffset> = TimeZone::from_utc(nd, tz);
         Ok(fotz.with_timezone(&Local))
     }
 }

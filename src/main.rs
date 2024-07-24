@@ -38,8 +38,8 @@ async fn run() -> Result<()> {
 
     let mut s = wsf::Session::new("afddf683-37c5-4d1a-8486-f7004a16d86d").await;
 
-    let from = s.find_terminal(&from_in).await?.TerminalID;
-    let to = s.find_terminal(&to_in).await?.TerminalID;
+    let from = s.find_terminal(from_in).await?.TerminalID;
+    let to = s.find_terminal(to_in).await?.TerminalID;
 
     let tc = s.schedule(from, to).await?;
 
@@ -66,5 +66,5 @@ async fn main() -> Result<()> {
     let env = env_logger::Env::default().filter_or("WSF_LOG", "info");
     env_logger::init_from_env(env);
 
-    Ok(run().await?)
+    run().await
 }
